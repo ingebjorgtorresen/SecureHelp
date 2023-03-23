@@ -71,7 +71,7 @@ class RegisterSerializer(UserSerializer):
         uid = urlsafe_base64_encode(user.username.encode())
         domain = get_current_site(self.context["request"])
         link = reverse('verify-email', kwargs={"uid": uid})
-        expire_time = datetime.now() + timedelta(minutes=15)
+        expire_time = datetime.now() + timedelta(days=1)
         link += f'?expiry={expire_time.strftime("%Y-%m-$d %H:%M:S")}'
 
         url = f"{settings.PROTOCOL}://{domain}{link}"
