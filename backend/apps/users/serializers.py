@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.settings import api_settings
@@ -70,6 +71,8 @@ class RegisterSerializer(UserSerializer):
         uid = urlsafe_base64_encode(user.username.encode())
         domain = get_current_site(self.context["request"])
         link = reverse('verify-email', kwargs={"uid": uid})
+        expire_time = datetime.now() + timedelta(days=1)
+        link += f'?expiry={expire_time.strftime("%Y-%m-$d %H:%M:S")}'
 
         url = f"{settings.PROTOCOL}://{domain}{link}"
 
