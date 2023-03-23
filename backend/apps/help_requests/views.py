@@ -59,7 +59,7 @@ class AcceptHelpRequest(generics.GenericAPIView):
 
     def post(self, request):
         # check if id is provided
-        if not(request.data.get('request_id')):
+        if not (request.data.get('request_id')):
             return Response({'error': 'id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         # check if id is valid
@@ -93,13 +93,13 @@ class FinishHelpRequest(generics.GenericAPIView):
 
     def post(self, request):
         # check if id is provided
-        if not(request.data.get('request_id')):
+        if not (request.data.get('request_id')):
             return Response({'error': 'id is required'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:  # check if id is valid
             rId = request.data.get('request_id')
             help_requests = HelpRequest.objects.raw(
-                "SELECT * FROM help_requests_helprequest WHERE id = '%s'" % rId)
+                "SELECT * FROM help_requests_helprequest WHERE id = '%s'",  [rId])
             help_request = help_requests[0]
         except:
             return Response({'error': 'Invalid id'}, status=status.HTTP_400_BAD_REQUEST)
