@@ -10,8 +10,10 @@ import {
 import React, { useState } from "react";
 import HelpRequestService from "../services/helpRequests";
 import DocumentService from "../services/documents";
+import DOMPurify from 'dompurify';
 
 const HelpRequest = ({ helpRequest, update, OpenSnackbar, user }) => {
+  const sanitizedDescription = DOMPurify.sanitize(helpRequest.description);
   const [anchorEl, setAnchorEl] = useState(null);
 
   const [documents, setDocuments] = useState([]);
@@ -144,7 +146,7 @@ const HelpRequest = ({ helpRequest, update, OpenSnackbar, user }) => {
           ) : null}
         </Stack>
         <div
-          dangerouslySetInnerHTML={{ __html: helpRequest.description }}
+          dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
         ></div>
       </CardContent>
       <Stack alignItems='center'>

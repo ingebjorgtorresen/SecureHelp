@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.settings import api_settings
@@ -21,8 +22,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username', 'email', 'is_volunteer', 'is_staff']
-        read_only_fields = ['id']
+        fields = ["id", "username", "email", "is_volunteer", "is_staff"]
+        read_only_fields = ["id"]
 
 
 class LoginSerializer(TokenObtainPairSerializer):
@@ -35,11 +36,11 @@ class LoginSerializer(TokenObtainPairSerializer):
         refresh = self.get_token(self.user)
 
         # add user data to response
-        data['user'] = UserSerializer(self.user).data
+        data["user"] = UserSerializer(self.user).data
         # add refresh token to response
-        data['refresh'] = str(refresh)
+        data["refresh"] = str(refresh)
         # add access token to response
-        data['access'] = str(refresh.access_token)
+        data["access"] = str(refresh.access_token)
 
         if api_settings.UPDATE_LAST_LOGIN:
             update_last_login(None, self.user)
@@ -49,14 +50,15 @@ class LoginSerializer(TokenObtainPairSerializer):
 
 class RegisterSerializer(UserSerializer):
     """Serializer for user registration"""
+
     password = serializers.CharField(
-        max_length=128, min_length=1, write_only=True, required=True)
-    email = serializers.CharField(
-        max_length=128, min_length=1,  required=True)
+        max_length=128, min_length=1, write_only=True, required=True
+    )
+    email = serializers.CharField(max_length=128, min_length=1, required=True)
 
     class Meta:
         model = get_user_model()
-        fields = ['id', 'username', 'email', 'password', 'is_volunteer']
+        fields = ["id", "username", "email", "password", "is_volunteer"]
 
     def create(self, validated_data):
         user = get_user_model().objects.create_user(**validated_data)
@@ -68,8 +70,13 @@ class RegisterSerializer(UserSerializer):
         email = validated_data["email"]
         email_subject = "Activate your account"
         uid = urlsafe_base64_encode(user.username.encode())
+        token = PasswordResetTokenGenerator.make_token(
+            PasswordResetTokenGenerator(), user
+        )
         domain = get_current_site(self.context["request"])
-        link = reverse('verify-email', kwargs={"uid": uid})
+        link = reverse("verify-email", kwargs={"uid": uid})
+        expire_time = datetime.now() + timedelta(days=1)
+        link += f'?expiry={expire_time.strftime("%Y-%m-$d %H:%M:S")}'
 
         url = f"{settings.PROTOCOL}://{domain}{link}"
 
@@ -86,7 +93,7 @@ class RegisterSerializer(UserSerializer):
     def validate(self, data):
 
         # get the password from the data
-        password = data.get('password')
+        password = data.get("password")
 
         errors = dict()
         try:
@@ -95,7 +102,7 @@ class RegisterSerializer(UserSerializer):
 
         # the exception raised here is different than serializers.ValidationError
         except exceptions.ValidationError as e:
-            errors['password'] = list(e.messages)
+            errors["password"] = list(e.messages)
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -108,29 +115,25 @@ class ResetPasswordSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = get_user_model()
-        fields = ['email', "username"]
+        fields = ["email", "username"]
 
 
 class SetNewPasswordSerializer(serializers.Serializer):
     """Serializer for setting new password"""
 
-    password = serializers.CharField(
-        style={"input_type": "password"}, write_only=True)
-    password1 = serializers.CharField(
-        style={"input_type": "password"}, write_only=True)
-    token = serializers.CharField(
-        min_length=1, write_only=True)
-    uid = serializers.CharField(
-        min_length=1, write_only=True)
+    password = serializers.CharField(style={"input_type": "password"}, write_only=True)
+    password1 = serializers.CharField(style={"input_type": "password"}, write_only=True)
+    token = serializers.CharField(min_length=1, write_only=True)
+    uid = serializers.CharField(min_length=1, write_only=True)
 
     class Meta:
-        fields = ['password', 'password1', 'token', 'uid']
+        fields = ["password", "password1", "token", "uid"]
 
     def validate(self, attrs):
-        password = attrs.get('password')
-        password1 = attrs.get('password1')
-        token = attrs.get('token')
-        uid = attrs.get('uid')
+        password = attrs.get("password")
+        password1 = attrs.get("password1")
+        token = attrs.get("token")
+        uid = attrs.get("uid")
 
         id = force_str(urlsafe_base64_decode(uid))
         user = get_user_model().objects.get(id=id)
@@ -140,7 +143,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
             # validate password using django's validate_password
             validate_password(password)
         except exceptions.ValidationError as error:
-            errorMessage['message'] = list(error.messages)
+            errorMessage["message"] = list(error.messages)
 
         if errorMessage:  # if there is an error, raise it
             raise serializers.ValidationError(errorMessage)
@@ -158,29 +161,31 @@ class DocumentPostSerializer(serializers.ModelSerializer):
     """
     Serializer for the upload Documents.
     """
+
     class Meta:
         model = Document
-        fields = ('id', 'document')
+        fields = ("id", "document")
 
 
 class DocumentGetSerializer(serializers.ModelSerializer):
     """
     Serializer for the download of Documents.
     """
+
     link = serializers.SerializerMethodField()  # link to download the document
     name = serializers.SerializerMethodField()  # name of the document
 
     class Meta:
         model = Document
-        fields = ('id', 'user', 'link', 'name')
+        fields = ("id", "user", "link", "name")
 
     def get_link(self, obj):  # get the link to download the document
         domain = get_current_site(self.context["request"])
-        link = reverse('document-download', kwargs={"pk": obj.id})
+        link = reverse("document-download", kwargs={"pk": obj.id})
 
         link = f"{settings.PROTOCOL}://{domain}{link}"
         return link
 
     def get_name(self, obj):
         # name is stored as documents/id/filename, so splitting and selecting last item gets only the filename.
-        return obj.document.name.split('/')[-1]
+        return obj.document.name.split("/")[-1]
