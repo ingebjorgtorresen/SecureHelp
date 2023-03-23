@@ -28,6 +28,7 @@ const App = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarText, setSnackbarText] = useState("");
 
+  // TODO the signout function should be connected to the LogoutView.
   const signOut = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("access_token");

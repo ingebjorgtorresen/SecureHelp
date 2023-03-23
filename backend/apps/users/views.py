@@ -1,3 +1,4 @@
+from http.client import REQUEST_ENTITY_TOO_LARGE
 from django.contrib.auth import get_user_model
 from rest_framework import permissions, viewsets, filters, status, generics, views
 from apps.users.serializers import *
@@ -61,6 +62,26 @@ class RegistrationViewSet(viewsets.ModelViewSet, TokenObtainPairView):
             "refresh": res["refresh"],
             "token": res["access"]
         }, status=status.HTTP_201_CREATED)
+
+
+class LogoutView(generics.GenericAPIView):
+    """ViewSet for logging out users"""
+
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.data.get('refresh_token')
+
+        # Delete the refresh token from the authentication server
+        if refresh_token:
+            # replace with your server URL
+            delete_token_url = 'http://your-auth-server.com/delete-token/'
+            headers = {'Authorization': f'Bearer {refresh_token}'}
+            response = REQUEST_ENTITY_TOO_LARGE.post(
+                delete_token_url, headers=headers)
+            if response.status_code == 204:
+                # Clear the refresh token from the user's session
+                del request.session['refresh_token']
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class LoginViewSet(viewsets.ModelViewSet, TokenObtainPairView):
